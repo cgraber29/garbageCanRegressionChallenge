@@ -41,30 +41,340 @@ observDF <- tribble(
 observDF
 ```
 
-## Python Code
+# Regression Analysis
 
-```{python}
-#| echo: true
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-import statsmodels.api as sm
+## Question 1: Bivariate Regression Analysis with Coefficient Interpretation
 
-# Data with known true relationships: Anxiety = Stress + 0.1 × Time
-data = {
-    'Stress': [0,0,0,1,1,1,2,2,2,8,8,8,12,12,12],
-    'StressSurvey': [0,0,0,3,3,3,6,6,6,9,9,9,12,12,12],
-    'Time': [0,1,1,1,1,1,2,2,2,2,2,2.1,2.2,2.2,2.2],
-    'Anxiety': [0,0.1,0.1,1.1,1.1,1.1,2.2,2.2,2.2,8.2,8.2,8.21,12.22,12.22,12.22]
-}
+```{r}
+# Bivariate regression: Anxiety ~ Stress
+bivariate_model <- lm(Anxiety ~ Stress, data = observDF)
+bivariate_summary <- summary(bivariate_model)
+bivariate_summary
 
-observDF = pd.DataFrame(data)
-print(observDF)
+# Extract coefficients for interpretation
+bivariate_coef <- coef(bivariate_model)
+cat("Bivariate Regression Results:\n")
+cat("Intercept (β₀):", round(bivariate_coef[1], 4), "\n")
+cat("Stress Coefficient (β₁):", round(bivariate_coef[2], 4), "\n")
+cat("R-squared:", round(bivariate_summary$r.squared, 4), "\n")
+cat("Adjusted R-squared:", round(bivariate_summary$adj.r.squared, 4), "\n")
+
+# Coefficient interpretation
+cat("\nCoefficient Interpretation:\n")
+cat("- Intercept: When Stress = 0, the predicted Anxiety level is", round(bivariate_coef[1], 4), "\n")
+cat("- Stress Coefficient: For every 1-unit increase in Stress, Anxiety increases by", round(bivariate_coef[2], 4), "units\n")
+cat("- The model explains", round(bivariate_summary$r.squared * 100, 2), "% of the variance in Anxiety\n")
 ```
 
-## Your Analysis
+## Question 2: Scatter Plot with Regression Line and Interpretation
 
-Follow the challenge instructions from your course to complete your analysis.
+```{r}
+# Create scatter plot with regression line
+library(ggplot2)
+
+ggplot(observDF, aes(x = Stress, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(
+    title = "Bivariate Regression: Anxiety vs Stress",
+    subtitle = paste("Regression Line: Anxiety =", round(bivariate_coef[1], 3), "+", round(bivariate_coef[2], 3), "× Stress"),
+    x = "Stress Level",
+    y = "Anxiety Level",
+    caption = paste("R² =", round(bivariate_summary$r.squared, 3))
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title = element_text(size = 11)
+  )
+
+# Interpretation of the scatter plot
+cat("Scatter Plot Interpretation:\n")
+cat("- The plot shows a strong positive linear relationship between Stress and Anxiety\n")
+cat("- The red regression line has a slope of", round(bivariate_coef[2], 3), "indicating a", round(bivariate_coef[2], 3), "unit increase in Anxiety for each unit increase in Stress\n")
+cat("- The confidence band around the regression line shows the uncertainty in our predictions\n")
+cat("- Most data points cluster close to the regression line, indicating a good model fit\n")
+```
+
+## Question 3: Multiple Regression Analysis with Coefficient Comparison
+
+```{r}
+# Multiple regression: Anxiety ~ Stress + StressSurvey + Time
+multiple_model <- lm(Anxiety ~ Stress + StressSurvey + Time, data = observDF)
+multiple_summary <- summary(multiple_model)
+multiple_summary
+
+# Extract coefficients for comparison
+multiple_coef <- coef(multiple_model)
+cat("Multiple Regression Results:\n")
+cat("Intercept (β₀):", round(multiple_coef[1], 4), "\n")
+cat("Stress Coefficient (β₁):", round(multiple_coef[2], 4), "\n")
+cat("StressSurvey Coefficient (β₂):", round(multiple_coef[3], 4), "\n")
+cat("Time Coefficient (β₃):", round(multiple_coef[4], 4), "\n")
+cat("R-squared:", round(multiple_summary$r.squared, 4), "\n")
+cat("Adjusted R-squared:", round(multiple_summary$adj.r.squared, 4), "\n")
+
+# Coefficient comparison
+cat("\nCoefficient Comparison:\n")
+cat("- Stress coefficient in bivariate model:", round(bivariate_coef[2], 4), "\n")
+cat("- Stress coefficient in multiple model:", round(multiple_coef[2], 4), "\n")
+cat("- Difference:", round(multiple_coef[2] - bivariate_coef[2], 4), "\n")
+cat("- StressSurvey coefficient:", round(multiple_coef[3], 4), "\n")
+cat("- Time coefficient:", round(multiple_coef[4], 4), "\n")
+
+# Interpretation
+cat("\nMultiple Regression Interpretation:\n")
+cat("- When controlling for StressSurvey and Time, each 1-unit increase in Stress increases Anxiety by", round(multiple_coef[2], 4), "units\n")
+cat("- When controlling for Stress and Time, each 1-unit increase in StressSurvey increases Anxiety by", round(multiple_coef[3], 4), "units\n")
+cat("- When controlling for Stress and StressSurvey, each 1-unit increase in Time increases Anxiety by", round(multiple_coef[4], 4), "units\n")
+cat("- The multiple regression model explains", round(multiple_summary$r.squared * 100, 2), "% of the variance in Anxiety\n")
+
+# Visualization: Multiple regression relationships
+
+# Plot 1: Stress vs Anxiety (from multiple regression)
+p1 <- ggplot(observDF, aes(x = Stress, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(title = "Stress vs Anxiety (Multiple Regression)", 
+       x = "Stress Level", y = "Anxiety Level") +
+  theme_minimal()
+
+# Plot 2: StressSurvey vs Anxiety
+p2 <- ggplot(observDF, aes(x = StressSurvey, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "darkgreen") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(title = "StressSurvey vs Anxiety", 
+       x = "StressSurvey Level", y = "Anxiety Level") +
+  theme_minimal()
+
+# Plot 3: Time vs Anxiety
+p3 <- ggplot(observDF, aes(x = Time, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "purple") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(title = "Time vs Anxiety", 
+       x = "Time", y = "Anxiety Level") +
+  theme_minimal()
+
+# Arrange plots using patchwork (better for HTML rendering)
+library(patchwork)
+
+# Combine plots
+p1 + p2 + p3 + plot_layout(ncol = 3)
+```
+
+## Question 4: Multiple Regression Analysis with Stress and Time
+
+```{r}
+# Multiple regression: Anxiety ~ Stress + Time
+stress_time_model <- lm(Anxiety ~ Stress + Time, data = observDF)
+stress_time_summary <- summary(stress_time_model)
+stress_time_summary
+
+# Extract coefficients
+stress_time_coef <- coef(stress_time_model)
+cat("Stress + Time Regression Results:\n")
+cat("Intercept (β₀):", round(stress_time_coef[1], 4), "\n")
+cat("Stress Coefficient (β₁):", round(stress_time_coef[2], 4), "\n")
+cat("Time Coefficient (β₂):", round(stress_time_coef[3], 4), "\n")
+cat("R-squared:", round(stress_time_summary$r.squared, 4), "\n")
+cat("Adjusted R-squared:", round(stress_time_summary$adj.r.squared, 4), "\n")
+
+# Interpretation
+cat("\nStress + Time Model Interpretation:\n")
+cat("- When controlling for Time, each 1-unit increase in Stress increases Anxiety by", round(stress_time_coef[2], 4), "units\n")
+cat("- When controlling for Stress, each 1-unit increase in Time increases Anxiety by", round(stress_time_coef[3], 4), "units\n")
+cat("- This model explains", round(stress_time_summary$r.squared * 100, 2), "% of the variance in Anxiety\n")
+cat("- The true relationship in the data is: Anxiety = Stress + 0.1 × Time\n")
+cat("- Our estimated relationship is: Anxiety =", round(stress_time_coef[1], 4), "+", round(stress_time_coef[2], 4), "× Stress +", round(stress_time_coef[3], 4), "× Time\n")
+
+# Visualization: 2D projections and relationship analysis
+# Create a pairs plot to show all relationships
+pairs(observDF[, c("Stress", "StressSurvey", "Time", "Anxiety")], 
+      main = "Pairs Plot: All Variable Relationships",
+      pch = 16, col = "steelblue", cex = 1.2)
+
+# Print correlation matrix
+cat("Correlation Matrix:\n")
+cor_data <- observDF[, c("Stress", "StressSurvey", "Time", "Anxiety")]
+cor_matrix <- cor(cor_data)
+print(round(cor_matrix, 3))
+
+# 2D projections for better understanding
+p4 <- ggplot(observDF, aes(x = Stress, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(title = "Stress vs Anxiety (Stress+Time Model)", 
+       x = "Stress Level", y = "Anxiety Level") +
+  theme_minimal()
+
+p5 <- ggplot(observDF, aes(x = Time, y = Anxiety)) +
+  geom_point(size = 3, alpha = 0.7, color = "purple") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 1) +
+  labs(title = "Time vs Anxiety (Stress+Time Model)", 
+       x = "Time", y = "Anxiety Level") +
+  theme_minimal()
+
+# Residuals plot
+fitted_values <- fitted(stress_time_model)
+residuals <- resid(stress_time_model)
+
+p6 <- ggplot(data.frame(fitted = fitted_values, residuals = residuals), 
+             aes(x = fitted, y = residuals)) +
+  geom_point(size = 3, alpha = 0.7, color = "darkred") +
+  geom_hline(yintercept = 0, color = "red", linewidth = 1) +
+  geom_smooth(se = TRUE, color = "blue", linewidth = 1) +
+  labs(title = "Residuals vs Fitted Values", 
+       x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+# Arrange 2D plots using patchwork
+p4 + p5 + p6 + plot_layout(ncol = 3)
+```
+
+## Model Comparison Analysis: Stress Survey vs Stress Models
+
+```{r}
+# Create models for comparison
+stress_only_model <- lm(Anxiety ~ Stress, data = observDF)
+stress_survey_model <- lm(Anxiety ~ StressSurvey, data = observDF)
+stress_time_model <- lm(Anxiety ~ Stress + Time, data = observDF)
+stress_survey_time_model <- lm(Anxiety ~ StressSurvey + Time, data = observDF)
+
+# Model comparison table
+model_comparison <- data.frame(
+  Model = c("Stress Only", "StressSurvey Only", "Stress + Time", "StressSurvey + Time"),
+  R_squared = c(
+    summary(stress_only_model)$r.squared,
+    summary(stress_survey_model)$r.squared,
+    summary(stress_time_model)$r.squared,
+    summary(stress_survey_time_model)$r.squared
+  ),
+  Adj_R_squared = c(
+    summary(stress_only_model)$adj.r.squared,
+    summary(stress_survey_model)$adj.r.squared,
+    summary(stress_time_model)$adj.r.squared,
+    summary(stress_survey_time_model)$adj.r.squared
+  ),
+  AIC = c(
+    AIC(stress_only_model),
+    AIC(stress_survey_model),
+    AIC(stress_time_model),
+    AIC(stress_survey_time_model)
+  ),
+  BIC = c(
+    BIC(stress_only_model),
+    BIC(stress_survey_model),
+    BIC(stress_time_model),
+    BIC(stress_survey_time_model)
+  )
+)
+
+# Round values for better presentation
+model_comparison[, 2:5] <- round(model_comparison[, 2:5], 4)
+
+print("Model Comparison Table:")
+print(model_comparison)
+
+# Statistical comparison
+cat("\nStatistical Model Comparison:\n")
+cat("1. Stress Only vs StressSurvey Only:\n")
+anova(stress_only_model, stress_survey_model)
+
+cat("\n2. Stress + Time vs StressSurvey + Time:\n")
+anova(stress_time_model, stress_survey_time_model)
+
+cat("\n3. Stress Only vs Stress + Time:\n")
+anova(stress_only_model, stress_time_model)
+
+cat("\n4. StressSurvey Only vs StressSurvey + Time:\n")
+anova(stress_survey_model, stress_survey_time_model)
+
+# Interpretation
+cat("\nModel Comparison Interpretation:\n")
+cat("- Best R-squared:", model_comparison$Model[which.max(model_comparison$R_squared)], "(", max(model_comparison$R_squared), ")\n")
+cat("- Best Adjusted R-squared:", model_comparison$Model[which.max(model_comparison$Adj_R_squared)], "(", max(model_comparison$Adj_R_squared), ")\n")
+cat("- Lowest AIC:", model_comparison$Model[which.min(model_comparison$AIC)], "(", min(model_comparison$AIC), ")\n")
+cat("- Lowest BIC:", model_comparison$Model[which.min(model_comparison$BIC)], "(", min(model_comparison$BIC), ")\n")
+
+# Coefficient comparison between Stress and StressSurvey models
+cat("\nCoefficient Comparison:\n")
+cat("Stress model coefficients:\n")
+print(coef(stress_only_model))
+cat("\nStressSurvey model coefficients:\n")
+print(coef(stress_survey_model))
+cat("\nStress + Time model coefficients:\n")
+print(coef(stress_time_model))
+cat("\nStressSurvey + Time model coefficients:\n")
+print(coef(stress_survey_time_model))
+
+# Visualization: Model comparison plots
+# Plot 1: Actual vs Predicted for different models
+predictions <- data.frame(
+  Actual = observDF$Anxiety,
+  Stress_Only = predict(stress_only_model),
+  StressSurvey_Only = predict(stress_survey_model),
+  Stress_Time = predict(stress_time_model),
+  StressSurvey_Time = predict(stress_survey_time_model)
+)
+
+# Reshape for plotting
+library(tidyr)
+predictions_long <- predictions %>%
+  pivot_longer(cols = -Actual, names_to = "Model", values_to = "Predicted")
+
+# Plot actual vs predicted for all models
+p7 <- ggplot(predictions_long, aes(x = Actual, y = Predicted, color = Model)) +
+  geom_point(size = 2, alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linewidth = 1) +
+  facet_wrap(~Model, scales = "free") +
+  labs(title = "Actual vs Predicted Values by Model",
+       x = "Actual Anxiety", y = "Predicted Anxiety") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Plot 2: Residuals comparison
+residuals_data <- data.frame(
+  Actual = observDF$Anxiety,
+  Stress_Only_Residuals = residuals(stress_only_model),
+  StressSurvey_Only_Residuals = residuals(stress_survey_model),
+  Stress_Time_Residuals = residuals(stress_time_model),
+  StressSurvey_Time_Residuals = residuals(stress_survey_time_model)
+)
+
+residuals_long <- residuals_data %>%
+  pivot_longer(cols = -Actual, names_to = "Model", values_to = "Residuals") %>%
+  mutate(Model = gsub("_Residuals", "", Model))
+
+p8 <- ggplot(residuals_long, aes(x = Actual, y = Residuals, color = Model)) +
+  geom_point(size = 2, alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linewidth = 1) +
+  facet_wrap(~Model, scales = "free") +
+  labs(title = "Residuals by Model",
+       x = "Actual Anxiety", y = "Residuals") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Plot 3: R-squared comparison bar chart
+r_squared_data <- data.frame(
+  Model = c("Stress Only", "StressSurvey Only", "Stress + Time", "StressSurvey + Time"),
+  R_squared = c(
+    summary(stress_only_model)$r.squared,
+    summary(stress_survey_model)$r.squared,
+    summary(stress_time_model)$r.squared,
+    summary(stress_survey_time_model)$r.squared
+  )
+)
+
+p9 <- ggplot(r_squared_data, aes(x = reorder(Model, R_squared), y = R_squared, fill = Model)) +
+  geom_col(alpha = 0.7) +
+  geom_text(aes(label = round(R_squared, 3)), hjust = -0.1) +
+  coord_flip() +
+  labs(title = "R-squared Comparison Across Models",
+       x = "Model", y = "R-squared") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Arrange comparison plots using patchwork
+p7 / p8 / p9
+```
